@@ -16,15 +16,16 @@ void main() {
 	float radius = 0.5;
 	float dist = radius - distance(uv, vec2(0.5));
 	float t = smoothstep(0.0, border, dist);
-
-    float threashold = 0.15;
-    if ( text.r < threashold || text.g < threashold || text.b < threashold ) discard;
+    
+    float threashold = 0.5;
+    if ( text.r + text.g + text.b <= threashold ) discard;
 
     gl_FragColor = vec4(text.rgb, t);
 }`
 
 const vertex = `
 precision highp float;
+const float PI = 3.1415926535897932384626433832795;
 
 attribute vec3 offset; 
 attribute float index;
@@ -32,10 +33,16 @@ attribute float index;
 varying vec2 vUv;
 varying vec2 vPUv;
 
-uniform float uTime;
 uniform vec2 uMouse;
+
+uniform float uTime;
+uniform float uRandom;
+uniform float uSize;
+uniform float uDepth;
+
 uniform vec2 uTextureSize;
 uniform sampler2D uTexture;
+uniform sampler2D uNextTexture;
 
 vec3 permute(vec3 x) { return mod(((x*34.0)+1.0)*x, 289.0); }
 
@@ -88,20 +95,22 @@ void main() {
 
 	float rndz = (random(index) + snoise(vec2(index * 0.1, uTime * 0.1)));
     displaced.xy += vec2(random(index) - 0.5, random(offset.x + index) - 0.5);
-	displaced.z += rndz * (random(index) * 2.0 * (sin(uTime * 0.2) + 5.));
+	displaced.z += rndz * (random(index) * 2.0 * (sin(uTime * 0.2) + 5.) * uDepth);           // (sin(uTime * 0.2) + 5.)
 	
 	displaced.xy -= uTextureSize * 0.5;
     
-    // float dist = length(puv - uMouse);
-    // float t = circle(vec2(dist), 0.1, 5.0);
+    float dist = length(puv - uMouse);          // vec2(cos(uTime/8.))
+    float t = circle(vec2(dist), 0.1, 8.0);
 
-	// displaced.z += t * 20.0 * rndz;
-	// displaced.x += cos(index) * t * 20.0 * rndz;
-	// displaced.y += sin(index) * t * 20.0 * rndz;
+	displaced.z += t * 40.0 * rndz ;
+	displaced.x += t * 40.0 * rndz * cos(random(index) * PI) ;
+	displaced.y += t * 40.0 * rndz * sin(random(index) * PI) ;
+
+    // displaced *= vec3(uRandom);
 
     float psize = (snoise(vec2(uTime, index) * 0.5) + 2.0);
 	psize *= max(colorIntensity, 0.2);
-    psize *= 1.5;
+    psize *= uSize;
 
     vec4 mvPosition = modelViewMatrix * vec4(displaced, 1.0);
 	mvPosition.xyz += position * psize;
