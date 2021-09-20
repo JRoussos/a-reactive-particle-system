@@ -4,6 +4,7 @@ precision highp float;
 varying vec2 vUv;
 varying vec2 vPUv;
 
+uniform float uSize;
 uniform sampler2D uTexture;
 
 void main() {
@@ -20,7 +21,7 @@ void main() {
     float threashold = 0.5;
     if ( text.r + text.g + text.b <= threashold ) discard;
 
-    gl_FragColor = vec4(text.rgb, t);
+    gl_FragColor = vec4(text.rgb * uSize, t);
 }`
 
 const vertex = `
@@ -95,22 +96,22 @@ void main() {
 
 	float rndz = (random(index) + snoise(vec2(index * 0.1, uTime * 0.1)));
     displaced.xy += vec2(random(index) - 0.5, random(offset.x + index) - 0.5);
-	displaced.z += rndz * (random(index) * 2.0 * (sin(uTime * 0.2) + 5.) * uDepth);           // (sin(uTime * 0.2) + 5.)
+	displaced.z += rndz * (random(index) * 2.0 * (sin(uTime * 0.2) + 5.) * uDepth);
 	
 	displaced.xy -= uTextureSize * 0.5;
     
-    float dist = length(puv - uMouse);          // vec2(cos(uTime/8.))
+    float dist = length(puv - uMouse);
     float t = circle(vec2(dist), 0.1, 8.0);
 
 	displaced.z += t * 40.0 * rndz ;
 	displaced.x += t * 40.0 * rndz * cos(random(index) * PI) ;
 	displaced.y += t * 40.0 * rndz * sin(random(index) * PI) ;
 
-    // displaced *= vec3(uRandom);
+    // displaced *= vec3(1.2);
 
     float psize = (snoise(vec2(uTime, index) * 0.5) + 2.0);
 	psize *= max(colorIntensity, 0.2);
-    psize *= uSize;
+    psize *= max((uSize * 2.0), 0.5);
 
     vec4 mvPosition = modelViewMatrix * vec4(displaced, 1.0);
 	mvPosition.xyz += position * psize;
