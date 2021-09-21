@@ -42,8 +42,8 @@ uniform float uSize;
 uniform float uDepth;
 
 uniform vec2 uTextureSize;
+uniform sampler2D uTouch;
 uniform sampler2D uTexture;
-uniform sampler2D uNextTexture;
 
 vec3 permute(vec3 x) { return mod(((x*34.0)+1.0)*x, 289.0); }
 
@@ -93,21 +93,18 @@ void main() {
 	float colorIntensity = text.r * 0.21 + text.g * 0.71 + text.b * 0.07;
     
     vec3 displaced = offset;
-
-	float rndz = (random(index) + snoise(vec2(index * 0.1, uTime * 0.1)));
+    
+	float rndz = random(index) + snoise(vec2(index * 0.1, uTime * 0.1));
     displaced.xy += vec2(random(index) - 0.5, random(offset.x + index) - 0.5);
-	displaced.z += rndz * (random(index) * 2.0 * (sin(uTime * 0.2) + 5.) * uDepth);
+    displaced.z += rndz * (random(index) * 2.0 * (sin(index) + 5.) * uDepth);
 	
 	displaced.xy -= uTextureSize * 0.5;
-    
-    float dist = length(puv - uMouse);
-    float t = circle(vec2(dist), 0.1, 8.0);
 
-	displaced.z += t * 40.0 * rndz ;
-	displaced.x += t * 40.0 * rndz * cos(random(index) * PI) ;
-	displaced.y += t * 40.0 * rndz * sin(random(index) * PI) ;
+    float t = texture2D(uTouch, puv).r;
 
-    // displaced *= vec3(1.2);
+	displaced.x += t * 20.0 * rndz * cos(index);
+	displaced.y += t * 20.0 * rndz * sin(index);
+	displaced.z += t * 20.0 * rndz;
 
     float psize = (snoise(vec2(uTime, index) * 0.5) + 2.0);
 	psize *= max(colorIntensity, 0.2);

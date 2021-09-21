@@ -9,20 +9,21 @@ import { gsap } from 'gsap';
 import { vertex, fragment } from './newShaders';
 import { flowersArray } from './images';
 
+// import TouchTexture from './tTexture';
+import Interactivity, { texture } from './interactivity';
+
 import "./App.css";
 
 const Particles = () => {
 	const instanceMeshRef = useRef()
-	let uMouse = new Vector2()
 
-	let { uSize, uDepth } = useMemo(() => {
+	let { uSize, uDepth, uMouse } = useMemo(() => {
 		let uSize = { value: 0.0 }
 		let uDepth = { value: -30.0 }
+		let uMouse 	= new Vector2()
 		
-		return { uSize, uDepth }
+		return { uSize, uDepth, uMouse }
 	}, [])
-
-	let randomPick = Math.floor(Math.random() * flowersArray.length)
 
 	const ts = useLoader(TextureLoader, flowersArray, texture => {
 		texture.minFilter = LinearFilter
@@ -30,6 +31,7 @@ const Particles = () => {
 		texture.format = RGBFormat
 	})
 
+	let randomPick = Math.floor(Math.random() * flowersArray.length)
 	const text = ts[randomPick]
 
 	const width = text.image.width
@@ -57,7 +59,7 @@ const Particles = () => {
 			sPositions[i*3+1] = Math.floor(i / width)
 		}
 
-		return { sIndices, sPositions}
+		return { sIndices, sPositions }
 	}, [dots, width])
 	
 	useLayoutEffect(() => {
@@ -79,59 +81,46 @@ const Particles = () => {
 
 	useFrame( ({clock}) => {
 		instanceMeshRef.current.material.uniforms.uTime.value = clock.elapsedTime
-
-		// instanceMeshRef.current.rotation.x += Math.cos(clock.getElapsedTime() / 2) * 0.005
-		// instanceMeshRef.current.rotation.y += Math.cos(clock.getElapsedTime() / 2) * 0.005
-	})
-
-	const pointers = []
-
-	window.addEventListener('pointerdown', e => pointers.push(e))
-	window.addEventListener('pointerup', e => pointers.pop(e))
-
-	window.addEventListener('pointermove', e => {	
-		if(pointers.length > 1 ) return 
-		let pointX = 0.5 + ((e.clientX / window.innerWidth) * 2 - 1)
-		let pointY = 0.5 + ((e.clientY / window.innerHeight) * -2 + 1)
-
-		gsap.to(uMouse, { duration: 1.0, x: pointX, y: pointY })
 	})
 
 	setInterval(() => {
 		randomPick >= flowersArray.length-1 ? randomPick = 0 : randomPick++
 		instanceMeshRef.current && showParticles(20.0, 0.0, () => { 
 			instanceMeshRef.current.material.uniforms.uTexture.value = ts[randomPick] 
+			uDepth.value = -30.0
 			showParticles(2.0, 1.0)
 		})
 	}, 10000);
 
 	const uniforms = {
-		uSize,
-		uDepth,
+		uSize, uDepth,
 		uTime: { value: 0.0 },
 		uMouse: { value: uMouse },
+		uTouch: { value: texture },
 		uTexture: { value: text },
 		uTextureSize: { value: new Vector2(width, height) },
 	}
 
 	return (
-		<instancedMesh ref={instanceMeshRef} args={[null, null, dots]}>
-			<planeBufferGeometry attach="geometry" args={[1, 1]}>
-				<instancedBufferAttribute attachObject={['attributes', 'offset']} args={[sPositions, 3, false]} />
-				<instancedBufferAttribute attachObject={['attributes', 'index']} args={[sIndices, 1, false]} />
-			</planeBufferGeometry>
-			<shaderMaterial attach="material" uniforms={uniforms} fragmentShader={fragment} vertexShader={vertex} transparent={true} depthTest={false}/>
-		</instancedMesh>
+		<React.Fragment>
+			<instancedMesh ref={instanceMeshRef} args={[null, null, dots]}>
+				<planeBufferGeometry attach="geometry" args={[1, 1]}>
+					<instancedBufferAttribute attachObject={['attributes', 'offset']} args={[sPositions, 3, false]} />
+					<instancedBufferAttribute attachObject={['attributes', 'index']} args={[sIndices, 1, false]} />
+				</planeBufferGeometry>
+				<shaderMaterial attach="material" uniforms={uniforms} fragmentShader={fragment} vertexShader={vertex} transparent={true} depthTest={false}/>
+			</instancedMesh>
+			<Interactivity width={width} height={height}/>
+		</React.Fragment>
 	)
 }
 
 export default function App() {
 	const cameraProps = {
-		fov: Math.atan((window.innerHeight / 2) / 400) * 2 * (180 / Math.PI),
+		fov: 75,
 		near: 1,
-		zoom: window.innerHeight > window.innerWidth ? Math.min(window.innerHeight/window.innerWidth, 2) : Math.min(window.innerWidth/window.innerHeight, 2),
 		far: 2000,
-		position: [0, 0, 400]
+		position: [0, 0, 200]
 	}
 
 	return (
