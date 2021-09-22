@@ -1,24 +1,53 @@
+const fragment = `
+precision highp float;
+
+varying vec2 vUv;
+varying vec2 vPUv;
+
+uniform float uSize;
+uniform sampler2D uTexture;
+
+void main() {
+    vec2 uv = vUv;
+    vec2 puv = vPUv;
+
+    vec4 text = texture2D(uTexture, puv);
+
+    float threashold = 0.5;
+    if ( text.r + text.g + text.b <= threashold ) discard;
+
+	float border = 0.3;
+	float radius = 0.5;
+	float dist = radius - distance(uv, vec2(0.5));
+	float t = smoothstep(0.0, border, dist);
+
+    gl_FragColor = vec4(text.rgb * uSize, t);
+}`
+
 const vertex = `
-attribute float pindex;
-// attribute float angle;
-attribute vec3 offset;
+precision highp float;
+const float PI = 3.1415926535897932384626433832795;
+
+attribute vec3 offset; 
+attribute float index;
+
+varying vec2 vUv;
+varying vec2 vPUv;
 
 uniform float uTime;
 uniform float uRandom;
-uniform float uDepth;
 uniform float uSize;
-uniform vec2 uTextureSize;
-uniform sampler2D uTexture;
-uniform sampler2D uTouch;
+uniform float uDepth;
 
-varying vec2 vPUv;
-varying vec2 vUv;
-varying vec3 vPosition;
+uniform vec2 uTextureSize;
+uniform sampler2D uRayTexture;
+uniform sampler2D uTexture;
 
 vec3 permute(vec3 x) { return mod(((x*34.0)+1.0)*x, 289.0); }
 
 float snoise(vec2 v){
-  const vec4 C = vec4(0.211324865405187, 0.366025403784439,-0.577350269189626, 0.024390243902439);
+  const vec4 C = vec4(0.211324865405187, 0.366025403784439,
+           -0.577350269189626, 0.024390243902439);
   vec2 i  = floor(v + dot(v, C.yy) );
   vec2 x0 = v -   i + dot(i, C.xx);
   vec2 i1;
@@ -43,80 +72,47 @@ float snoise(vec2 v){
   return 130.0 * dot(m, g);
 }
 
+float circle(vec2 _st, float _radius, float blurriness){
+    vec2 dist = _st;
+    return 1.0 - smoothstep(_radius-(_radius*blurriness), _radius+(_radius*blurriness), sqrt(dot(dist,dist) * 4.0));
+}
+
 float random(float n) {
 	return fract(sin(n) * 43758.5453123);
 }
 
 void main() {
-	vUv = uv;
+	vUv = uv; // the uv coordinates  of the particle
 
-	// particle uv
-	vec2 puv = offset.xy / uTextureSize;
-	vPUv = puv;
+    vec2 puv = offset.xy / uTextureSize; // calculating how the texture should be applied onto each particle
+    vPUv = puv;
 
-	// pixel color
-	vec4 colA = texture2D(uTexture, puv);
-	float grey = colA.r * 0.21 + colA.g * 0.71 + colA.b * 0.07;
-
-	// displacement
-	vec3 displaced = offset;
-
-	// randomise
-	displaced.xy += vec2(random(pindex) - 0.5, random(offset.x + pindex) - 0.5) * uRandom;
-	float rndz = (random(pindex) + snoise(vec2(pindex * 0.1, uTime * 0.1)));
-	displaced.z += rndz * (random(pindex) * 2.0 * uDepth);
+    vec4 text = texture2D(uTexture, puv);
+	float colorIntensity = text.r * 0.27 + text.g * 0.52 + text.b * 0.31;
+    
+    vec3 displaced = offset;
+    
+	float rndz = random(index) + snoise(vec2(index * 0.1, uTime * 0.1));
+    displaced.xy += vec2(random(index) - 0.5, random(offset.x + index) - 0.5);
+    displaced.z += rndz * (random(index) * 2.0 * (sin(index) + 5.) * uDepth);
 	
-    // center
-	displaced.xy -= uTextureSize * 0.5;
+	displaced.xy -= uTextureSize * 0.5; // move every vertex half a screen to the left in order to center them
 
-	// touch
-	float t = texture2D(uTouch, puv).r;
+    float t = texture2D(uRayTexture, puv).r;
+
+	displaced.x += t * 20.0 * rndz * cos(index);
+	displaced.y += t * 20.0 * rndz * sin(index);
 	displaced.z += t * 20.0 * rndz;
-	displaced.x += cos(random(3.14)) * t * 20.0 * rndz;
-	displaced.y += sin(random(3.14)) * t * 20.0 * rndz;
 
-	// particle size
-	float psize = (snoise(vec2(uTime, pindex) * 0.5) + 2.0);
-	psize *= max(grey, 0.2);
-	psize *= uSize;
+    float psize = (snoise(vec2(uTime, index) * 0.5) + 2.0);
+	psize *= max(colorIntensity, 0.2);
+    psize *= max((uSize * 2.0), 0.5);
 
-	// final position
-	vec4 mvPosition = modelViewMatrix * vec4(displaced, 1.0);
+    vec4 mvPosition = modelViewMatrix * vec4(displaced, 1.0);
 	mvPosition.xyz += position * psize;
 	vec4 finalPosition = projectionMatrix * mvPosition;
 
-	gl_Position = finalPosition;
-}`
-
-const fragment = `
-uniform sampler2D uTexture;
-
-varying vec2 vPUv;
-varying vec2 vUv;
-
-void main() {
-	vec4 color = vec4(0.0);
-	vec2 uv = vUv;
-	vec2 puv = vPUv;
-
-	// pixel color
-	vec4 colA = texture2D(uTexture, puv);
-
-	// greyscale
-	float grey = colA.r * 0.21 + colA.g * 0.71 + colA.b * 0.07;
-	vec4 colB = vec4(grey, grey, grey, 1.0);
-
-	// circle
-	float border = 0.3;
-	float radius = 0.5;
-	float dist = radius - distance(uv, vec2(0.5));
-	float t = smoothstep(0.0, border, dist);
-
-	// final color
-	color = colB;
-	color.a = t;
-
-	gl_FragColor = color;
+    gl_Position = finalPosition;
 }`
 
 export { vertex, fragment }

@@ -6,23 +6,20 @@ import { OrbitControls } from '@react-three/drei';
 
 import { gsap } from 'gsap';
 
-import { vertex, fragment } from './newShaders';
-import { flowersArray } from './images';
-
-// import TouchTexture from './tTexture';
 import Interactivity, { texture } from './interactivity';
+import { vertex, fragment } from './shaders';
+import { flowersArray } from './images';
 
 import "./App.css";
 
 const Particles = () => {
 	const instanceMeshRef = useRef()
 
-	let { uSize, uDepth, uMouse } = useMemo(() => {
+	let { uSize, uDepth } = useMemo(() => {
 		let uSize = { value: 0.0 }
 		let uDepth = { value: -30.0 }
-		let uMouse 	= new Vector2()
 		
-		return { uSize, uDepth, uMouse }
+		return { uSize, uDepth }
 	}, [])
 
 	const ts = useLoader(TextureLoader, flowersArray, texture => {
@@ -36,10 +33,7 @@ const Particles = () => {
 
 	const width = text.image.width
 	const height = text.image.height
-
 	const dots = width * height
-
-	console.log(`width: ${width}`, `height: ${height}`, `dots: ${dots}`);
 
 	const showParticles = useCallback( (dValue, sValue,  callback) => {
 		gsap.timeline({ onComplete: callback })
@@ -83,20 +77,29 @@ const Particles = () => {
 		instanceMeshRef.current.material.uniforms.uTime.value = clock.elapsedTime
 	})
 
-	setInterval(() => {
+	let inMotion = false
+	const nextFlower = () => {
+		if(inMotion) return
+
+		clearInterval(timer)
+		timer = setInterval(nextFlower, 20000)
+
+		inMotion = true
 		randomPick >= flowersArray.length-1 ? randomPick = 0 : randomPick++
 		instanceMeshRef.current && showParticles(20.0, 0.0, () => { 
 			instanceMeshRef.current.material.uniforms.uTexture.value = ts[randomPick] 
 			uDepth.value = -30.0
-			showParticles(2.0, 1.0)
+			showParticles(2.0, 1.0, () => inMotion = false)
 		})
-	}, 10000);
+	}
+
+	let timer = setInterval(nextFlower, 20000)
+	window.addEventListener('click', nextFlower)
 
 	const uniforms = {
 		uSize, uDepth,
 		uTime: { value: 0.0 },
-		uMouse: { value: uMouse },
-		uTouch: { value: texture },
+		uRayTexture: { value: texture },
 		uTexture: { value: text },
 		uTextureSize: { value: new Vector2(width, height) },
 	}

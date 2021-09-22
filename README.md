@@ -1,70 +1,23 @@
-# Getting Started with Create React App
+# A "Reactive" Particle System
+[![](preview.gif "Live Preview")](https://some-flowers-for-you.netlify.app/)
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+[Live Preview](https://some-flowers-for-you.netlify.app/)
 
-## Available Scripts
+A demo for splitting images into their pixels and animate each of them as a particle with its own attributes and mouse interactions using React and React Three Fiber. Based on [this](https://tympanus.net/codrops/2019/01/17/interactive-particles-with-three-js/) article by [Bruno Imbrizi](http://brunoimbrizi.com/).
 
-In the project directory, you can run:
+### What I learned 
+- How to handle large numbers of particles in [r3f]( https://docs.pmnd.rs/react-three-fiber/getting-started/introduction "React Three Fiber") using instances. Basically we create one geometry and rendering it as many times as the pixels of the image, instead of having geometries for every pixel. 
 
-### `yarn start`
+- Also I learned [this]((https://i7x7p5b7.stackpathcdn.com/codrops/wp-content/uploads/2019/01/codrops-05.gif)) cool technique to interact with the particles that uses a new canvas on top of the existing one, onto which we draw circles at the mouse raycasted position, basically forming ripples on the canvas at every mouse move, and then using that as a texture for the particles vertex shader to move them accordingly. 
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+### Run
+- Install `npm install`
+- Run `npm start`
+- Build `npm run build`
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+### Libraries
 
-### `yarn test`
+- [Three.js](https://threejs.org/docs/index.html#manual/en/introduction/Creating-a-scene) - The WebGL library behind all the animations
+- [R3f](https://docs.pmnd.rs/react-three-fiber/getting-started/introduction) - A really (REALLY!) helpful library, its a React renderer for three.js
+- [gsap](https://greensock.com/gsap/) - An animation library for handling the exploding effect of the particles.
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
-
-### `yarn build`
-
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
-
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
-
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
-
-### `yarn eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
-
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
-
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `yarn build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
